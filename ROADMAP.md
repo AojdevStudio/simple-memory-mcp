@@ -256,6 +256,128 @@ export default class MCPMemoryPlugin extends Plugin {
 3. **Research:** Obsidian plugin development requirements
 4. **Decision:** Choose primary integration strategy based on complexity vs benefits
 
+---
+
+## 📦 One-Click Installation System
+
+### Vision: NPX-Based Installation
+**Goal:** Enable users to install the MCP server with a single command, similar to Desktop Commander's approach.
+
+**Target Command:**
+```bash
+npx @simple-memory/mcp-server@latest setup
+```
+
+### Implementation Strategy
+
+#### Phase 1: NPM Package Structure
+- **Package Name:** `@simple-memory/mcp-server` 
+- **Setup Script:** Automated configuration for Claude Desktop, Cursor, etc.
+- **Auto-Update:** Leverage npx for automatic updates on restart
+- **Cross-Platform:** Support Windows, macOS, and Linux
+
+#### Phase 2: Setup Script Features
+```javascript
+// setup-claude-server.js
+class MCPSetupWizard {
+  async run() {
+    // 1. Detect MCP client (Claude Desktop, Cursor, etc.)
+    // 2. Locate config files automatically
+    // 3. Add server configuration 
+    // 4. Verify installation
+    // 5. Provide usage instructions
+  }
+  
+  async detectClients() {
+    // Auto-detect: Claude Desktop, Cursor, other MCP clients
+    // Find config paths: claude_desktop_config.json, etc.
+  }
+  
+  async configureServer() {
+    // Add server entry to client configs
+    // Handle existing configurations gracefully
+    // Validate JSON syntax
+  }
+}
+```
+
+#### Phase 3: Distribution Channels
+
+**Primary Installation Methods:**
+1. **NPX (Recommended):** `npx @simple-memory/mcp-server@latest setup`
+2. **Smithery Integration:** `npx -y @smithery/cli install @simple-memory/mcp-server --client claude`
+3. **Bash Installer:** `curl -fsSL https://raw.githubusercontent.com/simple-memory/mcp-server/main/install.sh | bash`
+4. **Manual Setup:** Direct config file modification
+
+### Technical Implementation Plan
+
+#### Package.json Configuration
+```json
+{
+  "name": "@simple-memory/mcp-server",
+  "version": "1.0.0",
+  "bin": {
+    "simple-memory-mcp": "./index.js",
+    "setup": "./setup-claude-server.js"
+  },
+  "scripts": {
+    "setup": "node setup-claude-server.js",
+    "setup:debug": "node setup-claude-server.js --debug"
+  }
+}
+```
+
+#### Auto-Configuration Features
+- **Config Detection:** Automatically find Claude Desktop config paths
+- **Backup Creation:** Backup existing configs before modification
+- **Validation:** Verify installation and server connectivity
+- **Uninstall Support:** `npx @simple-memory/mcp-server@latest setup --uninstall`
+
+#### Cross-Platform Support
+```javascript
+// Platform-specific config paths
+const CONFIG_PATHS = {
+  darwin: '~/Library/Application Support/Claude/claude_desktop_config.json',
+  win32: '%APPDATA%/Claude/claude_desktop_config.json', 
+  linux: '~/.config/Claude/claude_desktop_config.json'
+};
+```
+
+### Installation User Experience
+
+#### Target Installation Flow
+1. **User runs:** `npx @simple-memory/mcp-server@latest setup`
+2. **Script detects:** Claude Desktop installation
+3. **Auto-configures:** MCP server in client config
+4. **Verifies:** Server connectivity and tool availability  
+5. **Provides:** Usage instructions and next steps
+
+#### Debug Mode Support
+```bash
+# Enable debugging for troubleshooting
+npx @simple-memory/mcp-server@latest setup --debug
+```
+
+#### Multiple Client Support
+- Claude Desktop (primary)
+- Cursor IDE
+- Other MCP-compatible clients
+- Future: VS Code extension, other editors
+
+### Publishing Strategy
+
+#### NPM Registry Preparation
+- **Scope:** `@simple-memory` organization
+- **Keywords:** `mcp`, `memory`, `ai`, `claude`, `knowledge-graph`
+- **Documentation:** Comprehensive README with examples
+- **Licensing:** MIT for maximum compatibility
+
+#### GitHub Integration
+- **Repository:** Public repo for transparency and contributions
+- **Releases:** Automated releases with changelog
+- **Issues:** Community support and feature requests
+- **CI/CD:** Automated testing and publishing
+
 **Question for You:** 
 - Do you prefer the **MCP built-in approach** (simpler, works with any client) or **Obsidian plugin** (more native, better UX)?
 - How important is real-time sync vs on-demand/scheduled sync?
