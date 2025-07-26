@@ -837,4 +837,4 @@ All errors return JSON with error message:
 - **Logic Errors**: Data inconsistencies  
 - **Protocol Errors**: MCP compliance issues
 
-For detailed troubleshooting, see [DEBUGGING.md](DEBUGGING.md).
+For detailed troubleshooting, see [debugging.md](debugging.md).

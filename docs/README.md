@@ -5,16 +5,17 @@ This directory contains all technical documentation for the Simple Memory MCP Se
 ## 📋 Documentation Overview
 
 ### **Core Documentation**
-- [`API.md`](./API.md) - Complete API reference with TypeScript interfaces
+- [`api.md`](./api.md) - Complete API reference with TypeScript interfaces
 - [`README.md`](../README.md) - Main project documentation (in root)
 
 ### **Implementation Guides**
-- [`MCP_BUILTIN_IMPLEMENTATION.md`](./MCP_BUILTIN_IMPLEMENTATION.md) - Built-in Obsidian export implementation
-- [`OBSIDIAN_INTEGRATION.md`](./OBSIDIAN_INTEGRATION.md) - Obsidian visualization integration guide
+- [`mcp-builtin-implementation.md`](./mcp-builtin-implementation.md) - Built-in Obsidian export implementation
+- [`obsidian-integration.md`](./obsidian-integration.md) - Obsidian visualization integration guide
+- [`naming-conventions.md`](./naming-conventions.md) - Official naming conventions for files, code, and projects
 
 ### **Development & Maintenance**
-- [`DEBUGGING.md`](./DEBUGGING.md) - Troubleshooting and debugging guide
-- [`CLEANUP_REPORT.md`](./CLEANUP_REPORT.md) - Project cleanup analysis and results
+- [`debugging.md`](./debugging.md) - Troubleshooting and debugging guide
+- [`cleanup-report.md`](./cleanup-report.md) - Project cleanup analysis and results
 - [`ROADMAP.md`](./ROADMAP.md) - Strategic planning and future development
 
 ### **AI Development Resources**
@@ -27,16 +28,16 @@ This directory contains all technical documentation for the Simple Memory MCP Se
 
 **For Users:**
 - Getting started: [`../README.md`](../README.md)
-- API reference: [`API.md`](./API.md)
-- Troubleshooting: [`DEBUGGING.md`](./DEBUGGING.md)
+- API reference: [`api.md`](./api.md)
+- Troubleshooting: [`debugging.md`](./debugging.md)
 
 **For Developers:**
-- Implementation guides: [`MCP_BUILTIN_IMPLEMENTATION.md`](./MCP_BUILTIN_IMPLEMENTATION.md)
+- Implementation guides: [`mcp-builtin-implementation.md`](./mcp-builtin-implementation.md)
 - Project roadmap: [`ROADMAP.md`](./ROADMAP.md)
-- Cleanup report: [`CLEANUP_REPORT.md`](./CLEANUP_REPORT.md)
+- Cleanup report: [`cleanup-report.md`](./cleanup-report.md)
 
 **For Integration:**
-- Obsidian setup: [`OBSIDIAN_INTEGRATION.md`](./OBSIDIAN_INTEGRATION.md)
+- Obsidian setup: [`obsidian-integration.md`](./obsidian-integration.md)
 - AI workflows: [`ai-docs/`](./ai-docs/)
 
 ---
