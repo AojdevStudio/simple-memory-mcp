@@ -6,7 +6,7 @@
   "main": "index.js",
   "bin": {
     "simple-memory-mcp": "./index.js",
-    "setup": "./setup-claude-server.js"
+    "setup": "./scripts/setup-claude-server.js"
   },
   "keywords": [
     "mcp",
@@ -21,8 +21,8 @@
   },
   "scripts": {
     "start": "node index.js",
-    "setup": "node setup-claude-server.js",
-    "setup:debug": "node setup-claude-server.js --debug",
+    "setup": "node scripts/setup-claude-server.js",
+    "setup:debug": "node scripts/setup-claude-server.js --debug",
     "test": "node test/test-server.js"
   },
   "repository": {

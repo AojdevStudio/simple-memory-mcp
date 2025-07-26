@@ -59,10 +59,18 @@ Export format (markdown/dataview/canvas/all) [markdown]: all
 
 - Node.js v18.x or higher
 - npm or pnpm package manager
+- Git
 
-#### Install Dependencies
+#### Clone and Install
 
 ```bash
+# Clone the repository
+git clone https://github.com/AojdevStudio/simple-memory-mcp.git
+
+# Navigate to the project directory
+cd simple-memory-mcp
+
+# Install dependencies
 npm install
 ```
 
