@@ -23,12 +23,44 @@ A lightweight Model Context Protocol (MCP) server that provides persistent knowl
 
 ## 🛠 Installation
 
-### Prerequisites
+### Interactive Installation (Recommended)
+
+```bash
+# Bash installer with interactive configuration
+curl -fsSL https://raw.githubusercontent.com/your-username/simple-memory-mcp/main/install.sh | bash
+```
+
+**What it does:**
+- 🔍 Auto-detects your Obsidian vaults
+- 📁 Configures custom memory storage location  
+- ⚙️ Sets up Claude Desktop/Cursor automatically
+- 🗂️ Optional Obsidian auto-export configuration
+
+**Interactive Setup Flow:**
+```
+📁 Memory Storage Configuration
+Where should memory be stored? [~/.cursor/memory.json]: 
+
+🗂️ Obsidian Integration  
+Do you use Obsidian? (y/n) [n]: y
+
+📚 Found Obsidian vaults:
+  1. My Knowledge Base (/Users/you/Documents/MyVault)
+  2. Work Notes (/Users/you/Desktop/WorkVault)
+Choose vault (1-2) or enter custom path [1]: 1
+
+Enable auto-export after entity creation? (y/n) [n]: y
+Export format (markdown/dataview/canvas/all) [markdown]: all
+```
+
+### Manual Installation
+
+#### Prerequisites
 
 - Node.js v18.x or higher
 - npm or pnpm package manager
 
-### Install Dependencies
+#### Install Dependencies
 
 ```bash
 npm install
@@ -117,6 +149,7 @@ await client.callTool({
 | `read_graph` | Get complete knowledge graph | `{}` | Full graph data |
 | `search_nodes` | Search entities by query | `{query: string}` | Matching entities |
 | `open_nodes` | Get specific entities | `{names: string[]}` | Requested entities |
+| `export_to_obsidian` | Export graph to Obsidian vault | `{vaultPath: string, format?: string}` | Export result |
 
 ### Data Types
 
@@ -281,6 +314,45 @@ Returns the complete knowledge graph with all entities and relations.
 }
 ```
 
+#### `export_to_obsidian`
+
+Export the knowledge graph to an Obsidian vault in various formats.
+
+**Input Schema:**
+```json
+{
+  "vaultPath": "/path/to/obsidian/vault",
+  "format": "markdown",
+  "autoIndex": true
+}
+```
+
+**Parameters:**
+- `vaultPath` (required): Path to the Obsidian vault directory
+- `format` (optional): Export format - "markdown", "dataview", "canvas", or "all" (default: "markdown")
+- `autoIndex` (optional): Whether to create index files (default: true)
+
+**Example:**
+```json
+{
+  "vaultPath": "/Users/username/Documents/MyVault",
+  "format": "all",
+  "autoIndex": true
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "vaultPath": "/Users/username/Documents/MyVault",
+  "format": "all",
+  "entityCount": 42,
+  "relationCount": 18,
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
 ## ⚙️ Configuration
 
 ### Environment Variables
@@ -289,6 +361,9 @@ Returns the complete knowledge graph with all entities and relations.
 |----------|---------|-------------|
 | `MEMORY_PATH` | `~/.cursor/memory.json` | Custom memory file location |
 | `NODE_ENV` | `development` | Runtime environment |
+| `OBSIDIAN_AUTO_EXPORT` | `false` | Enable automatic Obsidian export after entity creation |
+| `OBSIDIAN_VAULT_PATH` | - | Path to Obsidian vault for auto-export |
+| `OBSIDIAN_EXPORT_FORMAT` | `markdown` | Export format for auto-export |
 
 ### Memory File Structure
 

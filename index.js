@@ -10,6 +10,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import fs from 'fs/promises';
 import path from 'path';
+import { ObsidianConverter } from './scripts/obsidian-converter.js';
 
 const MEMORY_PATH = process.env.MEMORY_PATH ? path.join(process.env.MEMORY_PATH, 'memory.json') : path.join(process.env.HOME, '.cursor', 'memory.json');
 
@@ -58,7 +59,7 @@ class SimpleMemoryServer {
     }
   }
 
-  createEntities(entities) {
+  async createEntities(entities) {
     entities.forEach(entity => {
       this.entities.set(entity.name, {
         name: entity.name,
@@ -66,7 +67,21 @@ class SimpleMemoryServer {
         observations: entity.observations || []
       });
     });
-    this.saveMemory();
+    await this.saveMemory();
+    
+    // Optional auto-export to Obsidian
+    if (process.env.OBSIDIAN_AUTO_EXPORT === 'true' && process.env.OBSIDIAN_VAULT_PATH) {
+      try {
+        await this.exportToObsidian(
+          process.env.OBSIDIAN_VAULT_PATH,
+          process.env.OBSIDIAN_EXPORT_FORMAT || 'markdown'
+        );
+        console.error(`Auto-exported to Obsidian: ${process.env.OBSIDIAN_VAULT_PATH}`);
+      } catch (error) {
+        console.error(`Auto-export failed: ${error.message}`);
+      }
+    }
+    
     return Array.from(this.entities.values()).filter(e => entities.some(input => input.name === e.name));
   }
 
@@ -162,6 +177,42 @@ class SimpleMemoryServer {
       entities: Array.from(this.entities.values()),
       relations: this.relations
     };
+  }
+
+  async exportToObsidian(vaultPath, format = 'markdown', autoIndex = true) {
+    try {
+      const converter = new ObsidianConverter(MEMORY_PATH, vaultPath);
+      
+      switch (format) {
+        case 'markdown':
+          await converter.convertToMarkdownFiles(vaultPath);
+          break;
+        case 'dataview':
+          await converter.convertToDataview(vaultPath);
+          break;
+        case 'canvas':
+          await converter.convertToCanvas(vaultPath);
+          break;
+        case 'all':
+          await converter.convertToMarkdownFiles(vaultPath);
+          await converter.convertToDataview(path.join(vaultPath, 'Analytics'));
+          await converter.convertToCanvas(path.join(vaultPath, 'Visual'));
+          break;
+        default:
+          throw new Error(`Unknown format: ${format}`);
+      }
+      
+      return {
+        success: true,
+        vaultPath,
+        format,
+        entityCount: this.entities.size,
+        relationCount: this.relations.length,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      throw new Error(`Obsidian export failed: ${error.message}`);
+    }
   }
 }
 
@@ -357,6 +408,31 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
           required: ["names"]
         }
+      },
+      {
+        name: "export_to_obsidian",
+        description: "Export the knowledge graph to Obsidian vault in various formats",
+        inputSchema: {
+          type: "object",
+          properties: {
+            vaultPath: {
+              type: "string",
+              description: "The path to the Obsidian vault directory"
+            },
+            format: {
+              type: "string",
+              enum: ["markdown", "dataview", "canvas", "all"],
+              description: "The export format - markdown (individual files), dataview (business intelligence), canvas (visual network), or all formats",
+              default: "markdown"
+            },
+            autoIndex: {
+              type: "boolean",
+              description: "Whether to automatically create index files",
+              default: true
+            }
+          },
+          required: ["vaultPath"]
+        }
       }
     ]
   };
@@ -379,7 +455,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (name) {
       case "create_entities":
-        const result = memoryServer.createEntities(args.entities);
+        const result = await memoryServer.createEntities(args.entities);
         return { content: [{ type: "text", text: JSON.stringify(result) }] };
       case "create_relations":
         const relations = memoryServer.createRelations(args.relations);
@@ -405,6 +481,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "open_nodes":
         const nodes = memoryServer.openNodes(args.names);
         return { content: [{ type: "text", text: JSON.stringify(nodes) }] };
+      case "export_to_obsidian":
+        const exportResult = await memoryServer.exportToObsidian(
+          args.vaultPath, 
+          args.format || 'markdown', 
+          args.autoIndex !== false
+        );
+        return { content: [{ type: "text", text: JSON.stringify(exportResult) }] };
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
