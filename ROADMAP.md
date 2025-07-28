@@ -1,384 +1,233 @@
-# MCP Memory → Obsidian Integration Roadmap
+# Simple Memory MCP Server - Product Roadmap
 
-## 🚨 Current Problem Analysis
+## Vision & Strategy
 
-**Issue with Auto-Watch Implementation:**
-- ❌ Continuous `fs.watch()` process consuming system resources
-- ❌ Poor separation of concerns (converter doing server work)
-- ❌ Fragile file watching (misses rapid changes, OS-dependent behavior)
-- ❌ No atomic operation guarantees
-- ❌ Resource waste when Obsidian isn't being used
+The Simple Memory MCP Server aims to become the premier persistent knowledge graph solution for AI assistants, enabling seamless memory storage and retrieval across sessions. Our strategic focus is on providing reliable, easy-to-use memory capabilities while building towards advanced integrations with popular knowledge management tools.
 
-## 🎯 Strategic Approaches
-
-### Option A: Native Obsidian Plugin (Recommended)
-**Concept:** Build custom Obsidian plugin that connects directly to MCP server
-
-**Pros:**
-- ✅ Native Obsidian integration with proper API usage
-- ✅ Real-time updates through MCP protocol (no file watching)
-- ✅ User can control sync timing and frequency
-- ✅ Access to Obsidian's full plugin ecosystem
-- ✅ Professional UX with settings panel
-- ✅ Can leverage Obsidian's indexing and search
-
-**Cons:**
-- ❌ Requires TypeScript/Obsidian plugin development
-- ❌ Users need to install plugin
-- ❌ More complex initial setup
-
-**Technical Implementation:**
-```typescript
-// Obsidian Plugin Structure
-class MCPMemoryPlugin extends Plugin {
-  settings: MCPMemorySettings;
-  mcpClient: StdioServerTransport;
-  
-  async onload() {
-    // Connect to MCP server
-    // Register ribbon icon + commands
-    // Set up sync settings
-  }
-  
-  async syncFromMCP() {
-    // Call MCP tools: read_graph, etc.
-    // Update vault files atomically
-    // Trigger Obsidian indexing
-  }
-}
-```
-
-### Option B: MCP Server Built-in Conversion
-**Concept:** Add Obsidian export as native MCP tool
-
-**Pros:**
-- ✅ Zero external dependencies
-- ✅ Atomic operations (sync with memory updates)
-- ✅ Can trigger on actual data changes (not file changes)
-- ✅ Configurable output paths
-- ✅ Works with any MCP client
-
-**Cons:**
-- ❌ MCP server becomes Obsidian-aware (coupling)
-- ❌ Still requires manual triggering or scheduled runs
-- ❌ Less native Obsidian experience
-
-**Technical Implementation:**
-```javascript
-// New MCP Tools
-export_to_obsidian: {
-  name: "export_to_obsidian",
-  description: "Export knowledge graph to Obsidian vault",
-  inputSchema: {
-    type: "object",
-    properties: {
-      vault_path: { type: "string" },
-      format: { type: "string", enum: ["markdown", "dataview", "canvas"] },
-      auto_index: { type: "boolean" }
-    }
-  }
-}
-```
-
-### Option C: Hybrid Event-Based System
-**Concept:** MCP server emits events, lightweight listener updates Obsidian
-
-**Pros:**
-- ✅ Event-driven (no polling/watching)
-- ✅ Minimal resource usage
-- ✅ Separation of concerns
-- ✅ Can batch updates efficiently
-
-**Cons:**
-- ❌ Still external process management
-- ❌ Inter-process communication complexity
-- ❌ Platform-specific event handling
-
-### Option D: Obsidian Sync on MCP Tool Calls
-**Concept:** Trigger Obsidian export after successful MCP operations
-
-**Pros:**
-- ✅ Zero background processes
-- ✅ Guaranteed sync after changes
-- ✅ Simple implementation
-- ✅ User controls when sync happens
-
-**Cons:**
-- ❌ Slight delay on MCP operations
-- ❌ Could slow down MCP responses
-- ❌ Obsidian updates even when not needed
-
-## 📋 Implementation Priority Matrix
-
-### Phase 1: Quick Win (Week 1)
-**Goal:** Remove resource-intensive auto-watch, implement smart triggering
-
-1. **Remove Auto-Watch Feature**
-   - Delete `fs.watch()` implementation
-   - Replace with manual trigger commands
-   - Add `--no-watch` as default behavior
-
-2. **MCP Server Hook Integration**
-   - Add optional Obsidian export to `create_entities` success
-   - Environment variable: `OBSIDIAN_AUTO_EXPORT=true/false`
-   - Configurable output path: `OBSIDIAN_VAULT_PATH`
-
-### Phase 2: Professional Integration (Week 2)
-**Goal:** Choose and implement primary solution
-
-**Decision Point:** Obsidian Plugin vs MCP Built-in
-
-**If Plugin Route:**
-- Research Obsidian plugin development
-- Set up TypeScript build environment
-- Implement basic MCP connection
-- Create settings interface
-
-**If MCP Built-in Route:**
-- Add `export_to_obsidian` tool to MCP server
-- Implement atomic file operations
-- Add configuration management
-- Create scheduling options
-
-### Phase 3: Advanced Features (Week 3)
-**Goal:** Polish and optimize chosen solution
-
-- Incremental sync (only changed entities)
-- Conflict resolution strategies
-- Performance optimization
-- Error handling and recovery
-- User documentation and setup guides
-
-## 🔬 Technical Deep Dive
-
-### Current Architecture Problems
-```javascript
-// BAD: Resource-intensive continuous watching
-fs.watch(memoryPath, (eventType) => {
-  // Fires on every file touch, even non-changes
-  // Blocks thread, consumes CPU cycles
-  // OS-dependent reliability issues
-});
-```
-
-### Better Architecture Options
-
-**Option A: MCP Tool Integration**
-```javascript
-// In SimpleMemoryServer
-async create_entities(entities) {
-  const result = await this.processEntities(entities);
-  await this.saveMemory();
-  
-  // Optional Obsidian sync
-  if (process.env.OBSIDIAN_AUTO_EXPORT === 'true') {
-    await this.exportToObsidian();
-  }
-  
-  return result;
-}
-
-async exportToObsidian() {
-  const obsidianPath = process.env.OBSIDIAN_VAULT_PATH;
-  if (!obsidianPath) return;
-  
-  // Direct conversion without external process
-  const converter = new ObsidianConverter(MEMORY_PATH, obsidianPath);
-  await converter.convertToMarkdownFiles(obsidianPath);
-}
-```
-
-**Option B: Obsidian Plugin**
-```typescript
-// Obsidian Plugin
-export default class MCPMemoryPlugin extends Plugin {
-  async onload() {
-    this.addCommand({
-      id: 'sync-mcp-memory',
-      name: 'Sync from MCP Memory Server',
-      callback: () => this.syncFromMCP()
-    });
-    
-    // Optional: scheduled sync
-    this.registerInterval(
-      window.setInterval(() => this.syncFromMCP(), this.settings.syncInterval)
-    );
-  }
-  
-  async syncFromMCP() {
-    const client = new Client({
-      name: "obsidian-mcp-client",
-      version: "1.0.0"
-    }, {
-      capabilities: { tools: {} }
-    });
-    
-    // Connect to MCP server
-    const transport = new StdioServerTransport({
-      command: "node",
-      args: ["path/to/mcp-server/index.js"]
-    });
-    
-    await client.connect(transport);
-    
-    // Get data via MCP tools
-    const result = await client.callTool({
-      name: "read_graph"
-    });
-    
-    // Update vault files
-    await this.updateVaultFiles(result.content);
-  }
-}
-```
-
-## 🎯 Recommendation: Hybrid Approach
-
-**Phase 1:** MCP Built-in Export (immediate solution)
-- Add `export_to_obsidian` tool to MCP server
-- Environment-based auto-export configuration
-- Remove resource-intensive file watching
-
-**Phase 2:** Obsidian Plugin (professional solution)
-- Custom plugin for native integration
-- User-controlled sync timing
-- Rich settings and configuration
-
-**Phase 3:** Best of Both
-- Plugin uses MCP tools for data access
-- Server provides export capabilities for non-Obsidian users
-- Clean separation of concerns
-
-## 🚀 Next Steps
-
-1. **Immediate:** Remove auto-watch implementation
-2. **This Week:** Implement MCP server built-in export
-3. **Research:** Obsidian plugin development requirements
-4. **Decision:** Choose primary integration strategy based on complexity vs benefits
+### Mission Statement
+To democratize AI memory capabilities by providing a lightweight, reliable, and extensible MCP server that transforms how AI assistants maintain context and knowledge across conversations.
 
 ---
 
-## 📦 One-Click Installation System
+## Product Roadmap Overview
 
-### Vision: NPX-Based Installation
-**Goal:** Enable users to install the MCP server with a single command, similar to Desktop Commander's approach.
+### 🎯 Current Focus: Q4 2024 - Q1 2025
+**Theme: Foundation & Core Integration**
 
-**Target Command:**
-```bash
-npx @simple-memory/mcp-server@latest setup
-```
+Our immediate priority is stabilizing the core memory system and delivering seamless integration with popular AI clients through automated installation.
 
-### Implementation Strategy
+### 🚀 Medium Term: Q2 2025 - Q3 2025  
+**Theme: Knowledge Management Ecosystem**
 
-#### Phase 1: NPM Package Structure
-- **Package Name:** `@simple-memory/mcp-server` 
-- **Setup Script:** Automated configuration for Claude Desktop, Cursor, etc.
-- **Auto-Update:** Leverage npx for automatic updates on restart
-- **Cross-Platform:** Support Windows, macOS, and Linux
+Expanding beyond basic memory to create a comprehensive knowledge management ecosystem with Obsidian integration and advanced querying capabilities.
 
-#### Phase 2: Setup Script Features
-```javascript
-// setup-claude-server.js
-class MCPSetupWizard {
-  async run() {
-    // 1. Detect MCP client (Claude Desktop, Cursor, etc.)
-    // 2. Locate config files automatically
-    // 3. Add server configuration 
-    // 4. Verify installation
-    // 5. Provide usage instructions
-  }
-  
-  async detectClients() {
-    // Auto-detect: Claude Desktop, Cursor, other MCP clients
-    // Find config paths: claude_desktop_config.json, etc.
-  }
-  
-  async configureServer() {
-    // Add server entry to client configs
-    // Handle existing configurations gracefully
-    // Validate JSON syntax
-  }
-}
-```
+### 🌟 Long Term: Q4 2025+
+**Theme: Intelligence & Automation**
 
-#### Phase 3: Distribution Channels
+Building intelligent memory management with automated organization, relationship detection, and proactive knowledge suggestions.
 
-**Primary Installation Methods:**
-1. **NPX (Recommended):** `npx @simple-memory/mcp-server@latest setup`
-2. **Smithery Integration:** `npx -y @smithery/cli install @simple-memory/mcp-server --client claude`
-3. **Bash Installer:** `curl -fsSL https://raw.githubusercontent.com/simple-memory/mcp-server/main/install.sh | bash`
-4. **Manual Setup:** Direct config file modification
+---
 
-### Technical Implementation Plan
+## Release Phases
 
-#### Package.json Configuration
-```json
-{
-  "name": "@simple-memory/mcp-server",
-  "version": "1.0.0",
-  "bin": {
-    "simple-memory-mcp": "./index.js",
-    "setup": "./setup-claude-server.js"
-  },
-  "scripts": {
-    "setup": "node setup-claude-server.js",
-    "setup:debug": "node setup-claude-server.js --debug"
-  }
-}
-```
+## Phase 1: Core Stability & Easy Installation
+**Timeline: Q4 2024 - Q1 2025** | **Status: In Progress**
 
-#### Auto-Configuration Features
-- **Config Detection:** Automatically find Claude Desktop config paths
-- **Backup Creation:** Backup existing configs before modification
-- **Validation:** Verify installation and server connectivity
-- **Uninstall Support:** `npx @simple-memory/mcp-server@latest setup --uninstall`
+### Primary Objectives
+- Establish a rock-solid foundation for persistent memory
+- Eliminate installation friction through automation
+- Build a thriving user community
 
-#### Cross-Platform Support
-```javascript
-// Platform-specific config paths
-const CONFIG_PATHS = {
-  darwin: '~/Library/Application Support/Claude/claude_desktop_config.json',
-  win32: '%APPDATA%/Claude/claude_desktop_config.json', 
-  linux: '~/.config/Claude/claude_desktop_config.json'
-};
-```
+### Key Deliverables
 
-### Installation User Experience
+#### 1.1 Performance & Reliability Enhancement
+**Target: December 2024**
+- **Remove Resource-Intensive Auto-Watch**: Eliminate continuous `fs.watch()` processes consuming system resources
+- **Implement Smart Memory Persistence**: Replace fragile file watching with event-driven persistence
+- **Add Atomic Operations**: Ensure data consistency and prevent corruption during concurrent access
+- **Memory Optimization**: Optimize in-memory data structures and file I/O operations
 
-#### Target Installation Flow
-1. **User runs:** `npx @simple-memory/mcp-server@latest setup`
-2. **Script detects:** Claude Desktop installation
-3. **Auto-configures:** MCP server in client config
-4. **Verifies:** Server connectivity and tool availability  
-5. **Provides:** Usage instructions and next steps
+#### 1.2 One-Click Installation System  
+**Target: January 2025**
+- **NPX-Based Setup**: Enable installation with `npx @simple-memory/mcp-server@latest setup`
+- **Multi-Client Support**: Auto-detect and configure Claude Desktop, Cursor IDE, and other MCP clients
+- **Cross-Platform Compatibility**: Support Windows, macOS, and Linux with automated config path detection
+- **Installation Verification**: Built-in connectivity testing and troubleshooting tools
 
-#### Debug Mode Support
-```bash
-# Enable debugging for troubleshooting
-npx @simple-memory/mcp-server@latest setup --debug
-```
+#### 1.3 Enhanced User Experience
+**Target: February 2025**
+- **Comprehensive Documentation**: Complete setup guides, API documentation, and troubleshooting resources
+- **Debug Mode Support**: Advanced logging and diagnostic tools for developers
+- **Configuration Management**: Environment-based settings with validation and error handling
+- **Community Resources**: GitHub repository, issue tracking, and community support channels
 
-#### Multiple Client Support
-- Claude Desktop (primary)
-- Cursor IDE
-- Other MCP-compatible clients
-- Future: VS Code extension, other editors
+### Success Metrics
+- Zero-friction installation success rate >95%
+- Average setup time <5 minutes
+- System resource usage reduction >80%
+- Community adoption with 100+ active users
 
-### Publishing Strategy
+---
 
-#### NPM Registry Preparation
-- **Scope:** `@simple-memory` organization
-- **Keywords:** `mcp`, `memory`, `ai`, `claude`, `knowledge-graph`
-- **Documentation:** Comprehensive README with examples
-- **Licensing:** MIT for maximum compatibility
+## Phase 2: Knowledge Management Integration  
+**Timeline: Q2 2025 - Q3 2025** | **Status: Planning**
 
-#### GitHub Integration
-- **Repository:** Public repo for transparency and contributions
-- **Releases:** Automated releases with changelog
-- **Issues:** Community support and feature requests
-- **CI/CD:** Automated testing and publishing
+### Primary Objectives
+- Transform simple memory into a comprehensive knowledge management solution
+- Provide seamless integration with popular PKM tools
+- Enable rich knowledge visualization and exploration
 
-**Question for You:** 
-- Do you prefer the **MCP built-in approach** (simpler, works with any client) or **Obsidian plugin** (more native, better UX)?
-- How important is real-time sync vs on-demand/scheduled sync?
-- Should we prioritize zero-dependency solutions or richer integrations?
+### Key Deliverables
+
+#### 2.1 Obsidian Native Integration
+**Target: Q2 2025**
+- **Native Obsidian Plugin**: Custom TypeScript plugin for seamless vault integration
+- **Real-Time Synchronization**: Bidirectional sync between MCP memory and Obsidian vault
+- **Rich Markdown Export**: Support for Dataview queries, Canvas visualization, and linked references  
+- **Conflict Resolution**: Intelligent merging of concurrent changes from both systems
+
+#### 2.2 Advanced Memory Tools
+**Target: Q2 2025**
+- **Semantic Search**: Natural language querying across knowledge graph
+- **Relationship Visualization**: Interactive graph views of entity relationships
+- **Memory Analytics**: Insights into knowledge patterns and usage statistics
+- **Export Capabilities**: Support for multiple formats (JSON, CSV, GraphML)
+
+#### 2.3 Plugin Ecosystem Foundation
+**Target: Q3 2025**
+- **Plugin Architecture**: Extensible system for third-party integrations
+- **Notion Integration**: Bidirectional sync with Notion databases
+- **Roam Research Support**: Graph-based synchronization with Roam
+- **API Gateway**: RESTful API for external tool integrations
+
+### Success Metrics
+- Obsidian plugin adoption >500 installs
+- Knowledge graph queries response time <100ms
+- User retention rate >70% after 30 days
+- Integration ecosystem with 3+ supported tools
+
+---
+
+## Phase 3: Intelligent Memory Management
+**Timeline: Q4 2025+** | **Status: Vision**
+
+### Primary Objectives
+- Implement AI-powered memory organization and suggestions
+- Enable proactive knowledge discovery and relationship detection
+- Build advanced collaboration and sharing capabilities
+
+### Key Deliverables
+
+#### 3.1 AI-Enhanced Memory
+**Target: Q4 2025**
+- **Automatic Categorization**: ML-powered entity classification and tagging
+- **Relationship Discovery**: Automated detection of implicit connections between entities
+- **Knowledge Summarization**: AI-generated summaries of complex knowledge areas
+- **Proactive Suggestions**: Context-aware memory recommendations during conversations
+
+#### 3.2 Collaboration & Sharing
+**Target: Q1 2026**
+- **Shared Memory Spaces**: Team-based knowledge graphs with permission management
+- **Memory Publishing**: Public sharing of curated knowledge collections
+- **Version Control**: Git-like versioning for knowledge graph changes
+- **Collaborative Editing**: Real-time multi-user editing capabilities
+
+#### 3.3 Enterprise Features  
+**Target: Q2 2026**
+- **Enterprise SSO**: Integration with corporate identity providers
+- **Compliance Tools**: Data governance, audit trails, and retention policies
+- **Scalability Engine**: Support for millions of entities with sub-second query times
+- **Advanced Analytics**: Business intelligence and knowledge utilization metrics
+
+### Success Metrics
+- AI suggestion acceptance rate >60%
+- Enterprise client acquisition (5+ organizations)
+- Knowledge graph scale >1M entities per instance
+- Sub-100ms query performance at scale
+
+---
+
+## Technical Architecture Evolution
+
+### Current State: Simple File-Based Persistence
+- JSON file storage with in-memory caching
+- Basic MCP protocol implementation
+- Manual installation and configuration
+
+### Phase 2 Target: Multi-Modal Knowledge Hub
+- Plugin-based architecture with hot-reloading
+- Event-driven synchronization across multiple clients
+- Rich metadata and relationship modeling
+
+### Phase 3 Vision: Intelligent Knowledge Platform
+- Distributed architecture with cloud synchronization
+- AI-powered knowledge processing and enhancement
+- Enterprise-grade scalability and security
+
+---
+
+## Resource Requirements & Investment
+
+### Development Resources
+- **Phase 1**: 1 senior developer, 2-3 months focused development
+- **Phase 2**: 2-3 developers (1 senior, 1-2 mid-level), 6 months
+- **Phase 3**: 4-5 developers across multiple specializations, 12+ months
+
+### Infrastructure Investment
+- **Phase 1**: Minimal - NPM registry, GitHub hosting
+- **Phase 2**: Moderate - Plugin marketplaces, documentation hosting
+- **Phase 3**: Significant - Cloud infrastructure, AI model hosting, enterprise support
+
+### Community Investment
+- Documentation and educational content creation
+- Developer relations and community management
+- Integration partnerships with PKM tool vendors
+
+---
+
+## Risk Assessment & Mitigation
+
+### Technical Risks
+- **MCP Protocol Evolution**: Mitigation through close monitoring of protocol changes and early adoption of updates
+- **Performance at Scale**: Mitigation through incremental architecture improvements and performance benchmarking
+- **Integration Complexity**: Mitigation through phased rollout and extensive testing
+
+### Market Risks  
+- **Competitive Landscape**: Mitigation through focus on specific MCP ecosystem and superior developer experience
+- **User Adoption**: Mitigation through community building and frictionless onboarding
+- **Technology Shifts**: Mitigation through modular architecture and adaptable plugin system
+
+### Resource Risks
+- **Development Capacity**: Mitigation through phased delivery and community contributions
+- **Maintenance Burden**: Mitigation through automated testing and deployment pipelines
+- **Support Scaling**: Mitigation through comprehensive documentation and community-driven support
+
+---
+
+## Success Metrics & KPIs
+
+### Phase 1 KPIs
+- **Installation Success Rate**: >95% successful automated setups
+- **Time to Value**: <10 minutes from discovery to first successful memory operation
+- **Performance Improvement**: >80% reduction in resource usage vs. current implementation
+- **Community Growth**: 100+ GitHub stars, 50+ active users
+
+### Phase 2 KPIs  
+- **Integration Adoption**: 500+ Obsidian plugin installs, 3+ supported PKM tools
+- **User Engagement**: 70% 30-day retention, 50% weekly active usage
+- **Performance**: <100ms query response times, 99.9% uptime
+- **Ecosystem Growth**: 5+ community-contributed integrations
+
+### Phase 3 KPIs
+- **Scale Achievement**: Support for 1M+ entities per instance
+- **AI Effectiveness**: 60% acceptance rate for AI suggestions
+- **Enterprise Adoption**: 5+ enterprise clients, $100K+ ARR
+- **Market Position**: Top 3 MCP memory server by usage metrics
+
+---
+
+## Conclusion
+
+This roadmap positions the Simple Memory MCP Server to evolve from a useful development tool into a comprehensive knowledge management platform. By focusing on reliability and ease of use in Phase 1, building rich integrations in Phase 2, and adding intelligence in Phase 3, we create a sustainable path to becoming the memory solution of choice for AI-powered workflows.
+
+The phased approach allows for course corrections based on user feedback and market evolution while maintaining momentum toward our long-term vision of intelligent, collaborative knowledge management for AI assistants.
