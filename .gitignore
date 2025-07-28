@@ -24,6 +24,9 @@ Thumbs.db
 # MCP Server runtime files
 inspector-config.json
 
+# Claude session files
+.claude/hooks/.session-*
+
 # Temporary test files
 temp/
 tmp/
