@@ -27,6 +27,3 @@ inspector-config.json
 # Temporary test files
 temp/
 tmp/
-
-# Personal AI configurations (should not be in shared repos)
-.claude/
