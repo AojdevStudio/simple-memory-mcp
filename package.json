@@ -23,7 +23,7 @@
     "start": "node index.js",
     "setup": "node setup-claude-server.js",
     "setup:debug": "node setup-claude-server.js --debug",
-    "test": "node test/test-server.js"
+    "test": "node tests/search-test.js"
   },
   "repository": {
     "type": "git",
