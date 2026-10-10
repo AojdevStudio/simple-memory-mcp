@@ -1,0 +1,30 @@
+{
+  "source": "/volume1/projects/mcp-servers/simple-memory-mcp",
+  "original_head": "2ac93580e6bda1fc9294c9ba4c275ea46f7b5cc5",
+  "original_refs": [
+    [
+      "refs/heads/main",
+      "2ac93580e6bda1fc9294c9ba4c275ea46f7b5cc5",
+      "commit"
+    ],
+    [
+      "refs/remotes/origin/HEAD",
+      "8793e0c9d4502bae340dabedae1a0ec07a45992d",
+      "commit"
+    ],
+    [
+      "refs/remotes/origin/main",
+      "8793e0c9d4502bae340dabedae1a0ec07a45992d",
+      "commit"
+    ],
+    [
+      "refs/remotes/origin/terragon/work-on-issue-1",
+      "b8105c5e7dcbcdd346038b07f433fcb9feb2c1e4",
+      "commit"
+    ]
+  ],
+  "stashes": [],
+  "excluded_new_files": [
+    ".env.example"
+  ]
+}
